@@ -1,4 +1,5 @@
 const line = require('@line/bot-sdk');
+const AWS = require('aws-sdk');
 const {
   getMoment,
   getWeekOfMonth,
@@ -12,6 +13,8 @@ const {
 const client = new line.Client({
   channelAccessToken: process.env.ACCESS_TOKEN
 });
+
+const dynamo = new AWS.DynamoDB.DocumentClient({region: "ap-northeast-1"});
 
 const info = {
   burnable: {
@@ -69,6 +72,12 @@ exports.handler = async event => {
   const tomorrow = getMoment().add(1, 'days');
   const message = getMessage(tomorrow);
 
+  const resultFromDynamo = await dynamo.scan({
+    TableName: 'users',
+  }).promise();
+
+  const userIds = resultFromDynamo.Items.map(value => value.user_id);
+
   if (message) {
     const postMessage = {
       type:'text',
@@ -76,7 +85,7 @@ exports.handler = async event => {
     };
 
     try {
-      await client.pushMessage(process.env.USER_ID, postMessage);
+      await client.multicast(userIds, postMessage);
     } catch (error) {
       console.log(error)
     }
@@ -91,4 +100,3 @@ exports.handler = async event => {
     statusCode: 200
   }
 };
-
