@@ -23,6 +23,21 @@ exports.handler = async event => {
       }
 
       break;
+    case 'unfollow':
+      const deleteOption = {
+        TableName: 'users',
+        Key: {
+          user_id: userId
+        }
+      };
+
+      try {
+        await dynamo.delete(deleteOption).promise();
+      } catch(err) {
+        console.log(err);
+      }
+
+      break;
   }
 
   return {
